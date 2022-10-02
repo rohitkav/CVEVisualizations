@@ -1,0 +1,208 @@
+{% extends 'base.html' %} {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<!-- Styles -->
+<style>
+  #chartdiv {
+    width: 100%;
+    height: 400px;
+  }
+</style>
+
+<!-- Resources -->
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+<br />
+    <h5 style="color:rgb(18, 84, 125); font-family: 'Arial';" align="left">CVE's Over Time Bar Chart</h5></br>
+    <h6 align="left">Choose Product</h6>
+    <select id="product" onchange="chooseProduct()" class="form-control">
+      <option value="">Select Project</option>
+      <option value="">superset</option>
+      <option value="">pulsar</option>
+      <option value="">nuttx</option>
+      <option value="">flink</option>
+      <option value="">spark</option>
+      <option value="">maven</option>
+      <option value="">airflow</option>
+      <option value="">tensorflow</option>
+      <option value="">hadoop</option>
+      <option value="">tomcat</option>
+      <option value="">kafka</option>
+      <option value="">camel</option>
+      <option value="">iotdb</option>
+      <option value=""></option>"
+
+
+
+    </select>
+    <input type="hidden" name="hidden_value" id="hidden_value" />
+    <div style="clear:both"></div>
+    <br />
+
+<!-- Chart code -->
+<script>
+  function generateDatas(response) {
+        var chartData = [];
+        // Create the formatted array of chart data
+        console.log(response.data);
+        for (const cve_data of response.data) {
+          console.log(cve_data);
+          var tempdate = new Date(parseInt(cve_data[0]),0,1).getTime();
+          chartData.push({
+            date: tempdate,
+            value: cve_data[1],
+          });
+        }
+        console.log(chartData);
+        return chartData;
+      }
+    
+  var series 
+  var chart
+  function showBarChart(response) {
+    
+    console.log("response:", response);
+    am5.ready(function () {
+      // Create root element
+      // https://www.amcharts.com/docs/v5/getting-started/#Root_element
+      var root = am5.Root.new("chartdiv");
+
+      // Set themes
+      // https://www.amcharts.com/docs/v5/concepts/themes/
+      root.setThemes([am5themes_Animated.new(root)]);
+
+      // Create chart
+      // https://www.amcharts.com/docs/v5/charts/xy-chart/
+        chart = root.container.children.push(
+        am5xy.XYChart.new(root, {
+          panX: false,
+          panY: false,
+          wheelX: "panX",
+          wheelY: "zoomX",
+        })
+      );
+
+      // Add cursor
+      // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
+      var cursor = chart.set(
+        "cursor",
+        am5xy.XYCursor.new(root, {
+          behavior: "zoomX",
+        })
+      );
+      cursor.lineY.set("visible", false);
+
+      // iterate through my result-set and set date to year, value to count
+      // function generateData() {
+      //   value = Math.round(Math.random() * 10 - 5 + value);
+      //   am5.time.add(date, "day", 1);
+      //   return {
+      //     date: date.getTime(),
+      //     value: value,
+      //   };
+      // }
+      // function generateDatas(count) {
+      //   var chartData = [];
+      //   // Create the formatted array of chart data
+      //   console.log(response.data);
+      //   for (const cve_data of response.data) {
+      //     console.log(cve_data);
+      //     var tempdate = new Date(parseInt(cve_data[0]),0,1).getTime();
+      //     chartData.push({
+      //       date: tempdate,
+      //       value: cve_data[1],
+      //     });
+      //   }
+      //   console.log(chartData);
+      //   return chartData;
+      // }
+
+      // Create X axes
+      // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+      var xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
+      baseInterval: {
+          timeUnit: "year",
+          count: 1
+      },
+      renderer: am5xy.AxisRendererX.new(root, {}),
+      tooltip: am5.Tooltip.new(root, {})
+      }));
+
+     
+      // var xAxis = chart.xAxes.push(am5xy.ValueAxis.new(root, {
+      // renderer: am5xy.AxisRendererX.new(root, {})
+      // }));
+
+      // yAxis
+      // var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+      // renderer: am5xy.AxisRendererY.new(root, {})
+      // }));
+
+      let yRenderer = am5xy.AxisRendererY.new(root, {});
+      yRenderer.labels.template.setAll({
+        fill: "#000000",
+        fontSize: 10,
+      });
+      let yAxis = chart.yAxes.push(
+        am5xy.ValueAxis.new(root, {
+          renderer: yRenderer
+        }));
+      yAxis.title  
+
+      // // Add series
+      // // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
+
+        series = chart.series.push(
+        am5xy.ColumnSeries.new(root, {
+          name: "Series",
+          xAxis: xAxis,
+          yAxis: yAxis,
+          valueYField: "value",
+          valueXField: "date",
+          tooltip: am5.Tooltip.new(root, {
+            labelText: "{valueY}",
+          }),
+        })
+      );
+
+      // Add scrollbar
+      // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
+      chart.set(
+        "scrollbarX",
+        am5.Scrollbar.new(root, {
+          orientation: "horizontal",
+        })
+      );
+        
+      // var data = generateDatas(50);
+      // series.data.setAll(data);
+
+      // Make stuff animate on load
+      // https://www.amcharts.com/docs/v5/concepts/animations/
+      // series.appear(1000);
+      // chart.appear(1000, 100);
+      }); // end am5.ready()
+
+    }
+    
+  function chooseProduct(){
+    var select = document.getElementById('product');
+    var text = select.options[select.selectedIndex].text;
+    console.log(text)
+    axios.get(`http://localhost:5000/cves-over-time?product=${text}`).then(function (response) {
+
+    var data = generateDatas(response);
+    series.data.setAll(data);
+    series.appear(1000);
+    chart.appear(1000, 100);
+    });
+  };
+
+  showBarChart()
+
+</script>
+<!-- HTML -->
+<div id="chartdiv"></div>
+
+{% endblock %}

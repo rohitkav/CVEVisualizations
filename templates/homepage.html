@@ -1,0 +1,884 @@
+{% extends 'base.html' %} {% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+
+<script>window.onload=function(){
+  initializeGraphApache();
+  initializeGraphPyPi();
+  initializeGraphNPM();
+  initializeGraphGO();
+  }
+</script>
+
+<h3
+  style="
+    color: rgb(36, 116, 255);
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS',
+      sans-serif;
+    text-align: center;
+  "
+>
+  Visualize your Vulnerabilities
+</h3>
+<br />
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-6 mb-5">
+      <div class="card" style="width: 30rem">
+        <div class="card-body">
+          <h5 class="card-title">Top 20 Apache Products</h5>
+
+          <div id="chart1">
+            <style>
+              #chartdiv {
+                width: 100%;
+                height: 500px;
+              }
+            </style>
+
+            <!-- Resources -->
+            <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+            <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+            <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+            <h6 style="color: rgb(76, 128, 219)" align="left">
+              Choose Product
+            </h6>
+            <select
+              id="product"
+              onchange="chooseProduct(this)" onload="initializeGraphs()"
+              class="form-control"
+            >
+              <option value="" selected>tomcat</option>
+              <option value="">superset</option>
+              <option value="">pulsar</option>
+              <option value="">nuttx</option>
+              <option value="">flink</option>
+              <option value="">spark</option>
+              <option value="">maven</option>
+              <option value="">airflow</option>
+              <option value="">tensorflow</option>
+              <option value="">hadoop</option>
+              <option value="">hive</option>
+              <option value="">kafka</option>
+              <option value="">camel</option>
+              <option value="">iotdb</option>
+              <option value="">cloudstack</option>
+              
+            </select>
+
+            <input type="hidden" name="hidden_value" id="hidden_value" />
+            <div style="clear: both"></div>
+            <br />
+
+            <!-- Chart code -->
+            
+            <script>
+
+              var series 
+              var chart
+              function initializeGraphApache(){
+                  var select = document.getElementById('product');
+                  var text = select.options[select.selectedIndex].text;
+
+                  axios.get(`http://localhost:5000/cves-over-time?product=${text}`).then(function (response) {
+
+            
+                  var data = generateDatas(response);
+                  series.data.setAll(data);
+                  series.appear(1000);
+                  chart.appear(1000, 100);
+                  
+                  });
+              }
+
+              function generateDatas(response) {
+                    var chartData = [];
+                    // Create the formatted array of chart data
+                    console.log(response.data);
+                    for (const cve_data of response.data) {
+                      console.log(cve_data);
+                      var tempdate = new Date(parseInt(cve_data[0]),0,1).getTime();
+                      chartData.push({
+                        date: tempdate,
+                        value: cve_data[1],
+                      });
+                    }
+                    console.log(chartData);
+                    return chartData;
+                  }
+                
+            
+              function showBarChart(response) {
+                
+                console.log("response:", response);
+                am5.ready(function () {
+                  // Create root element
+                  // https://www.amcharts.com/docs/v5/getting-started/#Root_element
+                  var root = am5.Root.new("chartdiv");
+
+                  // Set themes
+                  // https://www.amcharts.com/docs/v5/concepts/themes/
+                  root.setThemes([am5themes_Animated.new(root)]);
+
+                  // Create chart
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/
+                    chart = root.container.children.push(
+                    am5xy.XYChart.new(root, {
+                      panX: false,
+                      panY: false,
+                      wheelX: "panX",
+                      wheelY: "zoomX",
+                    })
+                  );
+
+                  // Add cursor
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
+                  var cursor = chart.set(
+                    "cursor",
+                    am5xy.XYCursor.new(root, {
+                      behavior: "zoomX",
+                    })
+                  );
+                  cursor.lineY.set("visible", false);
+
+                  // Create X axes
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+                  var xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
+                  baseInterval: {
+                      timeUnit: "year",
+                      count: 1
+                  },
+                  renderer: am5xy.AxisRendererX.new(root, {}),
+                  tooltip: am5.Tooltip.new(root, {})
+                  }));
+
+                
+                  // var xAxis = chart.xAxes.push(am5xy.ValueAxis.new(root, {
+                  // renderer: am5xy.AxisRendererX.new(root, {})
+                  // }));
+
+                  // yAxis
+                  // var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+                  // renderer: am5xy.AxisRendererY.new(root, {})
+                  // }));
+
+                  let yRenderer = am5xy.AxisRendererY.new(root, {});
+                  yRenderer.labels.template.setAll({
+                    fill: "#000000",
+                    fontSize: 10,
+                  });
+                  let yAxis = chart.yAxes.push(
+                    am5xy.ValueAxis.new(root, {
+                      renderer: yRenderer
+                    }));
+                  yAxis.title  
+
+                  // // Add series
+                  // // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
+
+                    series = chart.series.push(
+                    am5xy.ColumnSeries.new(root, {
+                      name: "Series",
+                      xAxis: xAxis,
+                      yAxis: yAxis,
+                      valueYField: "value",
+                      valueXField: "date",
+                      tooltip: am5.Tooltip.new(root, {
+                        labelText: "{valueY}",
+                      }),
+                    })
+                  );
+
+                  // Add scrollbar
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
+                  chart.set(
+                    "scrollbarX",
+                    am5.Scrollbar.new(root, {
+                      orientation: "horizontal",
+                    })
+                  );
+                    
+                  // var data = generateDatas(50);
+                  // series.data.setAll(data);
+
+                  // Make stuff animate on load
+                  // https://www.amcharts.com/docs/v5/concepts/animations/
+                  // series.appear(1000);
+                  // chart.appear(1000, 100);
+                  }); // end am5.ready()
+
+                }
+                
+              function chooseProduct(){
+                console.log("Entering chooseProduct")
+                var select = document.getElementById('product');
+                var text = select.options[select.selectedIndex].text;
+
+                console.log("productchosen",text)
+                axios.get(`http://localhost:5000/cves-over-time?product=${text}`).then(function (response) {
+
+                var data = generateDatas(response);
+                series.data.setAll(data);
+                series.appear(1000);
+                chart.appear(1000, 100);
+                });
+              };
+              console.log("barchart")
+              showBarChart()
+
+            </script>
+            <div id="chartdiv"></div>
+          </div>
+          <!-- Styles -->
+
+          <p class="card-text">
+            Create a bar graph to display cve trends for various open-source
+            projects.
+          </p>
+          <a href="{{url_for('columnchart')}}" class="btn btn-primary">Create Graph</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+      <div class="card" style="width: 30rem">
+        <div class="card-body">
+          <h5 class="card-title">Top 20 Pypi Projects</h5>
+          <div id="chart2">
+
+            <style>
+              #chartdiv_pypi {
+                width: 100%;
+                height: 500px;
+              }
+            </style>
+
+            <!-- Resources -->
+            <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+            <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+            <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+            <h6 style="color: rgb(76, 128, 219)" align="left">
+              Choose Product
+            </h6>
+            <select
+              id="product_pypi"
+              onchange="chooseProductPyPi(this)"
+              class="form-control"
+            >
+              <option value="">six</option>
+              <option value="">numpy</option>
+              <option value="">pip</option>
+              <option value="">s3transfer</option>
+              <option value="">certifi</option>
+              <option value="">idna</option>
+              <option value="">pandas</option>
+              <option value="">certifi</option>
+              <option value="">certifi</option>
+              <option value="">certifi</option>
+
+            </select>
+
+            <input type="hidden" name="hidden_value" id="hidden_value" />
+            <div style="clear: both"></div>
+            <br />
+
+            <script>
+
+              var series_pypi
+              var chart_pypi
+              function initializeGraphPyPi(){
+                  var select = document.getElementById('product_pypi');
+                  var text = select.options[select.selectedIndex].text;
+
+                  axios.get(`http://localhost:5000/cves-over-time?product=${text}`).then(function (response) {
+
+                  var select = document.getElementById('product');
+                  var text = select.options[select.selectedIndex].text;
+                  var data = generateDatas(response);
+                  series_pypi.data.setAll(data);
+                  series_pypi.appear(1000);
+                  chart_pypi.appear(1000, 100);
+                  
+                  });
+              }
+    
+              function generateDatasPyPi(response) {
+                      var chartData = [];
+                      // Create the formatted array of chart data
+                      for (const cve_data of response.data) {
+                      console.log(cve_data);
+                      var tempdate = new Date(parseInt(cve_data[0]),0,1).getTime();
+                      chartData.push({
+                          date: tempdate,
+                          value: cve_data[1],
+                      });
+                      }
+                      console.log(chartData);
+                      return chartData;
+                  }
+          
+              function showLineChart(response){
+                  am5.ready(function() {
+                  
+                  // Create root element
+                  // https://www.amcharts.com/docs/v5/getting-started/#Root_element
+                  var root = am5.Root.new("chartdiv_pypi");
+                  
+                  
+                  // Set themes
+                  // https://www.amcharts.com/docs/v5/concepts/themes/
+                  root.setThemes([
+                  am5themes_Animated.new(root)
+                  ]);
+                  
+                  
+                  // Create chart
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/
+                  chart_pypi = root.container.children.push(am5xy.XYChart.new(root, {
+                  panX: true,
+                  panY: true,
+                  wheelX: "panX",
+                  wheelY: "zoomX",
+                  pinchZoomX:true
+                  }));
+                  
+                  
+                  // Add cursor
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
+                  var cursor = chart_pypi.set("cursor", am5xy.XYCursor.new(root, {
+                  behavior: "none"
+                  }));
+                  cursor.lineY.set("visible", false);
+                  
+                  
+                  // function generateDatas(count) {
+                  //     var chartData = [];
+                  //     // Create the formatted array of chart data
+                  //     console.log(response.data);
+                  //     for (const cve_data of response.data) {
+                  //     console.log(cve_data);
+                  //     var tempdate = new Date(parseInt(cve_data[0]),0,1).getTime();
+                  //     chartData.push({
+                  //         date: tempdate,
+                  //         value: cve_data[1],
+                  //     });
+                  //     }
+                  //     console.log(chartData);
+                  //     return chartData;
+                  // }
+          
+                  // Create axes
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+                  var xAxis = chart_pypi.xAxes.push(am5xy.DateAxis.new(root, {
+                  baseInterval: {
+                      timeUnit: "year",
+                      count: 1
+                  },
+                  renderer: am5xy.AxisRendererX.new(root, {}),
+                  tooltip: am5.Tooltip.new(root, {})
+                  }));
+                  
+                  var yAxis = chart_pypi.yAxes.push(am5xy.ValueAxis.new(root, {
+                  renderer: am5xy.AxisRendererY.new(root, {})
+          
+                  }));
+                 
+                          
+                  // Add series
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
+                  series_pypi = chart_pypi.series.push(am5xy.LineSeries.new(root, {
+                  name: "Series",
+                  xAxis: xAxis,
+                  yAxis: yAxis,
+                  valueYField: "value",
+                  valueXField: "date",
+                  tooltip: am5.Tooltip.new(root, {
+                      labelText: "{valueY}"
+                  })
+                  }));
+          
+                  // var data = generateDatas(50);
+                  // series.data.setAll(data);
+                  
+                  // Add scrollbar
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
+                  chart_pypi.set("scrollbarX", am5.Scrollbar.new(root, {
+                  orientation: "horizontal"
+                  }));
+                  
+                  
+                  // Make stuff animate on load
+                  // https://www.amcharts.com/docs/v5/concepts/animations/
+                  // series.appear(1000);
+                  // chart.appear(1000, 100);
+                  
+                  }); // end am5.ready()
+          
+              }
+              
+              function chooseProductPyPi(){
+                  var select = document.getElementById('product_pypi');
+                  var text = select.options[select.selectedIndex].text;
+                  console.log(text)
+                  axios.get(`http://localhost:5000/cves-over-time?product=${text}`).then(function (response) {
+                  
+                  var data = generateDatasPyPi(response);
+                  series_pypi.data.setAll(data);
+                  series_pypi.appear(1000);
+                  chart_pypi.appear(1000, 100);
+                  });
+              };
+              
+              showLineChart()
+              // add a chart_appear function for every graph that is called onload of the web page and automatically uses
+              // the first dropdown select
+
+              
+              </script>
+              
+              <!-- HTML -->
+              <div id="chartdiv_pypi"></div>
+
+          <p class="card-text">
+            Create a line/time series graph to see a trendline of CVEs per
+            project.
+          </p>
+          <a href="{{url_for('linechart')}}" class="btn btn-primary"
+            >Create Graph</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Container2 -->
+<div class="container2">
+  <div class="row">
+    <div class="col-lg-6 mb-5">
+      <div class="card" style="width: 30rem">
+        <div class="card-body">
+          <h5 class="card-title">Top 20 NPM Projects</h5>
+
+          <div id="chart3">
+            <style>
+              #chartdiv_npm {
+                width: 100%;
+                height: 500px;
+              }
+            </style>
+
+            <!-- Resources -->
+            <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+            <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+            <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+            <h6 style="color: rgb(76, 128, 219)" align="left">
+              Choose Product
+            </h6>
+
+            <select
+              id="product_NPM"
+              onchange="chooseProductNPM(this)"
+              class="form-control"
+            >
+              <option value="">axios</option>
+              <option value="">moment</option>
+              <option value="">react</option>
+              <option value="">vue</option>
+              <option value="">lodash</option>
+              <option value="">asyncjs</option>
+              <option value="">grunt</option>
+              <option value="">karma</option>
+              <option value="">molecular</option>
+              <option value="">mocha</option>
+
+              
+              
+            </select>
+
+            <input type="hidden" name="hidden_value" id="hidden_value" />
+            <div style="clear: both"></div>
+            <br />
+
+            <script>
+
+              var series_npm 
+              var chart_npm
+              function initializeGraphNPM(){
+                  var select = document.getElementById('product_NPM');
+                  var text = select.options[select.selectedIndex].text;
+
+                  axios.get(`http://localhost:5000/cves-over-time?product=${text}`).then(function (response) {
+
+                  var data = generateDatas(response);
+                  series_npm.data.setAll(data);
+                  series_npm.appear(1000);
+                  chart_npm.appear(1000, 100);
+                  
+                  });
+              }
+              function generateDatasNPM(response) {
+                    var chartData = [];
+                    // Create the formatted array of chart data
+                    console.log(response.data);
+                    for (const cve_data of response.data) {
+                      console.log(cve_data);
+                      var tempdate = new Date(parseInt(cve_data[0]),0,1).getTime();
+                      chartData.push({
+                        date: tempdate,
+                        value: cve_data[1],
+                      });
+                    }
+                    console.log(chartData);
+                    return chartData;
+                  }
+                
+             
+              function showBarChartNPM(response) {
+                
+                console.log("response:", response);
+                am5.ready(function () {
+                  // Create root element
+                  // https://www.amcharts.com/docs/v5/getting-started/#Root_element
+                  var root = am5.Root.new("chartdiv_npm");
+
+                  // Set themes
+                  // https://www.amcharts.com/docs/v5/concepts/themes/
+                  root.setThemes([am5themes_Animated.new(root)]);
+
+                  // Create chart
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/
+                    chart_npm = root.container.children.push(
+                    am5xy.XYChart.new(root, {
+                      panX: false,
+                      panY: false,
+                      wheelX: "panX",
+                      wheelY: "zoomX",
+                    })
+                  );
+
+                  // Add cursor
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
+                  var cursor = chart_npm.set(
+                    "cursor",
+                    am5xy.XYCursor.new(root, {
+                      behavior: "zoomX",
+                    })
+                  );
+                  cursor.lineY.set("visible", false);
+
+                  // Create X axes
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+                  var xAxis = chart_npm.xAxes.push(am5xy.DateAxis.new(root, {
+                  baseInterval: {
+                      timeUnit: "year",
+                      count: 1
+                  },
+                  renderer: am5xy.AxisRendererX.new(root, {}),
+                  tooltip: am5.Tooltip.new(root, {})
+                  }));
+
+                
+                  // var xAxis = chart.xAxes.push(am5xy.ValueAxis.new(root, {
+                  // renderer: am5xy.AxisRendererX.new(root, {})
+                  // }));
+
+                  // yAxis
+                  // var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+                  // renderer: am5xy.AxisRendererY.new(root, {})
+                  // }));
+
+                  let yRenderer = am5xy.AxisRendererY.new(root, {});
+                  yRenderer.labels.template.setAll({
+                    fill: "#000000",
+                    fontSize: 10,
+                  });
+                  let yAxis = chart_npm.yAxes.push(
+                    am5xy.ValueAxis.new(root, {
+                      renderer: yRenderer
+                    }));
+                  yAxis.title  
+
+                  // // Add series
+                  // // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
+
+                    series_npm = chart_npm.series.push(
+                    am5xy.ColumnSeries.new(root, {
+                      name: "Series",
+                      xAxis: xAxis,
+                      yAxis: yAxis,
+                      valueYField: "value",
+                      valueXField: "date",
+                      tooltip: am5.Tooltip.new(root, {
+                        labelText: "{valueY}",
+                      }),
+                    })
+                  );
+
+                  // Add scrollbar
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
+                  chart_npm.set(
+                    "scrollbarX",
+                    am5.Scrollbar.new(root, {
+                    orientation: "horizontal",
+                    })
+                  );
+                    
+                  // var data = generateDatas(50);
+                  // series.data.setAll(data);
+
+                  // Make stuff animate on load
+                  // https://www.amcharts.com/docs/v5/concepts/animations/
+                  // series.appear(1000);
+                  // chart.appear(1000, 100);
+                  }); // end am5.ready()
+
+                }
+                
+              function chooseProductNPM(){
+                console.log("Entering chooseProduct")
+
+                var select = document.getElementById('product_NPM');
+                var text = select.options[select.selectedIndex].text;
+
+                console.log("productchosen",text)
+                axios.get(`http://localhost:5000/cves-over-time?product=${text}`).then(function (response) {
+
+                var data = generateDatasNPM(response);
+                series_npm.data.setAll(data);
+                series_npm.appear(1000);
+                chart_npm.appear(1000, 100);
+                });
+              };
+              console.log("barchart")
+              showBarChartNPM()
+
+            </script>
+
+            <!-- HTML -->
+            <div id="chartdiv_npm"></div>
+
+          </div>
+
+          <p class="card-text">
+            Create a bar graph to display cve trends for various open-source
+            projects.
+          </p>
+          <a href="{{url_for('columnchart')}}" class="btn btn-primary">Create Graph</a>
+
+        </div>
+
+      </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+      <div class="card" style="width: 30rem">
+        <div class="card-body">
+          <h5 class="card-title">Top 20 GO-PM Projects</h5>
+
+          <div id="chart4">
+            <style>
+              #chartdiv_go {
+                width: 100%;
+                height: 500px;
+              }
+            </style>
+
+            <!-- Resources -->
+            <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+            <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+            <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+            <h6 style="color: rgb(76, 128, 219)" align="left">
+              Choose Product
+            </h6>
+
+            <select
+              id="product_go"
+              onchange="chooseProductGO(this)"
+              class="form-control"
+            >
+              <option value="">product</option>
+              <option value="">cobra</option>
+              <option value="">kingpin</option>
+              <option value="">go-flags</option>
+              <option value="">product</option>
+              <option value="">example</option>
+              
+              
+            </select>
+
+            <input type="hidden" name="hidden_value" id="hidden_value" />
+            <div style="clear: both"></div>
+            <br />
+            
+            <script>
+
+              function initializeGraphGO(){
+                  var select = document.getElementById('product_go');
+                  var text = select.options[select.selectedIndex].text;
+
+                  axios.get(`http://localhost:5000/cves-over-time?product=${text}`).then(function (response) {
+
+                  var data = generateDatas(response);
+                  series_go.data.setAll(data);
+                  series_go.appear(1000);
+                  chart_go.appear(1000, 100);
+                  
+                  });
+              }
+    
+              function generateDatasGO(response) {
+                      var chartData = [];
+                      // Create the formatted array of chart data
+                      for (const cve_data of response.data) {
+                      console.log(cve_data);
+                      var tempdate = new Date(parseInt(cve_data[0]),0,1).getTime();
+                      chartData.push({
+                          date: tempdate,
+                          value: cve_data[1],
+                      });
+                      }
+                      console.log(chartData);
+                      return chartData;
+                  }
+          
+              var series_go
+              var chart_go
+              function showLineChartGO(response){
+                  am5.ready(function() {
+                  
+                  // Create root element
+                  // https://www.amcharts.com/docs/v5/getting-started/#Root_element
+                  var root = am5.Root.new("chartdiv_go");
+                  
+                  
+                  // Set themes
+                  // https://www.amcharts.com/docs/v5/concepts/themes/
+                  root.setThemes([
+                  am5themes_Animated.new(root)
+                  ]);
+                  
+                  
+                  // Create chart
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/
+                  chart_go = root.container.children.push(am5xy.XYChart.new(root, {
+                  panX: true,
+                  panY: true,
+                  wheelX: "panX",
+                  wheelY: "zoomX",
+                  pinchZoomX:true
+                  }));
+                  
+                  
+                  // Add cursor
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
+                  var cursor = chart_go.set("cursor", am5xy.XYCursor.new(root, {
+                  behavior: "none"
+                  }));
+                  cursor.lineY.set("visible", false);
+                  
+                  
+                  // function generateDatas(count) {
+                  //     var chartData = [];
+                  //     // Create the formatted array of chart data
+                  //     console.log(response.data);
+                  //     for (const cve_data of response.data) {
+                  //     console.log(cve_data);
+                  //     var tempdate = new Date(parseInt(cve_data[0]),0,1).getTime();
+                  //     chartData.push({
+                  //         date: tempdate,
+                  //         value: cve_data[1],
+                  //     });
+                  //     }
+                  //     console.log(chartData);
+                  //     return chartData;
+                  // }
+          
+                  // Create axes
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+                  var xAxis = chart_go.xAxes.push(am5xy.DateAxis.new(root, {
+                  baseInterval: {
+                      timeUnit: "year",
+                      count: 1
+                  },
+                  renderer: am5xy.AxisRendererX.new(root, {}),
+                  tooltip: am5.Tooltip.new(root, {})
+                  }));
+                  
+                  var yAxis = chart_go.yAxes.push(am5xy.ValueAxis.new(root, {
+                  renderer: am5xy.AxisRendererY.new(root, {})
+          
+                  }));
+                 
+                          
+                  // Add series
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
+                  series_go = chart_go.series.push(am5xy.LineSeries.new(root, {
+                  name: "Series",
+                  xAxis: xAxis,
+                  yAxis: yAxis,
+                  valueYField: "value",
+                  valueXField: "date",
+                  tooltip: am5.Tooltip.new(root, {
+                      labelText: "{valueY}"
+                  })
+                  }));
+          
+                  // var data = generateDatas(50);
+                  // series.data.setAll(data);
+                  
+                  // Add scrollbar
+                  // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
+                  chart_go.set("scrollbarX", am5.Scrollbar.new(root, {
+                  orientation: "horizontal"
+                  }));
+                  
+                  
+                  // Make stuff animate on load
+                  // https://www.amcharts.com/docs/v5/concepts/animations/
+                  // series.appear(1000);
+                  // chart.appear(1000, 100);
+                  
+                  }); // end am5.ready()
+          
+              }
+              
+              function chooseProductGO(){
+                  var select = document.getElementById('product_go');
+                  var text = select.options[select.selectedIndex].text;
+                  console.log(text)
+                  axios.get(`http://localhost:5000/cves-over-time?product=${text}`).then(function (response) {
+                  
+                  var data = generateDatasPyPi(response);
+                  series_go.data.setAll(data);
+                  series_go.appear(1000);
+                  chart_go.appear(1000, 100);
+                  });
+              };
+          
+              showLineChartGO()
+              </script>
+              
+              <!-- HTML -->
+              <div id="chartdiv_go"></div>
+
+          <p class="card-text">
+            Create a line/time series graph to see a trendline of CVEs per
+            project.
+          </p>
+          <a href="{{url_for('linechart')}}" class="btn btn-primary"
+            >Create Graph</a
+          >
+
+  </div>
+
+</div>
+
+
+
+{% endblock %}
