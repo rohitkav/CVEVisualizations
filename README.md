@@ -10,3 +10,4 @@ stored CVE information and data and create accurate graphs with the most updated
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+<img width="1390" alt="Screen Shot 2022-10-10 at 10 59 54 PM" src="https://user-images.githubusercontent.com/91348918/195008463-8820a5d6-6532-4286-8df0-865fd87721fa.png">
