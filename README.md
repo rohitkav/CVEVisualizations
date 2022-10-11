@@ -1,4 +1,4 @@
-# CVEVisualizations
+# CVE Visualizations
 
 
 CVE Visualizations is a project made to show trends of CVE's for top open source projects/vendors over time. 
